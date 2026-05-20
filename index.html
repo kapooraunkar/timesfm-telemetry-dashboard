@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Telemetry Dashboard</title>
+
+    <!-- Chart.js Library -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 50px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>System Telemetry Forecast Validation</h1>
+
+    <!-- RAM Forecast Graph -->
+
+    <h2>RAM Forecast Validation</h2>
+    <canvas id="ramChart"></canvas>
+
+    <!-- CPU Forecast Graph -->
+
+    <h2>CPU Forecast Validation</h2>
+    <canvas id="cpuChart"></canvas>
+
+    <script>
+
+        async function loadData() {
+
+            // Fetch telemetry + forecast data from FastAPI
+
+            const response =
+                await fetch("http://127.0.0.1:8000/metrics");
+
+            const result =
+                await response.json();
+
+            // Moving average smoothing function
+            // Helps reduce short-term telemetry noise
+
+            function smoothData(data, windowSize = 3) {
+
+                const smoothed = [];
+
+                for (let i = 0; i < data.length; i++) {
+
+                    let start =
+                        Math.max(0, i - windowSize + 1);
+
+                    let subset =
+                        data.slice(start, i + 1);
+
+                    let avg =
+                        subset.reduce((a, b) => a + b, 0)
+                        / subset.length;
+
+                    smoothed.push(avg);
+                }
+
+                return smoothed;
+            }
+
+            // -----------------------------
+            // RAM DATA
+            // -----------------------------
+
+            const historicalRam =
+                smoothData(result.historical_ram);
+
+            const forecastRam =
+                smoothData(result.forecast_ram);
+
+            const actualFutureRam =
+                smoothData(result.actual_future_ram);
+
+            // -----------------------------
+            // CPU DATA
+            // -----------------------------
+
+            const historicalCpu =
+                smoothData(result.historical_cpu);
+
+            const forecastCpu =
+                smoothData(result.forecast_cpu);
+
+            const actualFutureCpu =
+                smoothData(result.actual_future_cpu);
+
+            // -----------------------------
+            // GRAPH LABELS
+            // -----------------------------
+
+            const totalPoints =
+                historicalRam.length +
+                actualFutureRam.length;
+
+            const labels = [];
+
+            for (let i = 1; i <= totalPoints; i++) {
+                labels.push(i);
+            }
+
+            // -----------------------------
+            // RAM VISUALIZATION
+            // -----------------------------
+
+            // Historical RAM occupies first section
+            // Remaining points padded with null
+
+            const historicalRamExtended =
+                historicalRam.concat(
+                    new Array(historicalRam.length).fill(null)
+                );
+
+            // Forecast begins after historical ends
+
+            const forecastRamExtended =
+                new Array(historicalRam.length - 1).fill(null)
+                    .concat([
+                        historicalRam[
+                            historicalRam.length - 1
+                        ]
+                    ])
+                    .concat(forecastRam);
+
+            // Actual future RAM values
+
+            const actualFutureRamExtended =
+                new Array(historicalRam.length).fill(null)
+                    .concat(actualFutureRam);
+
+            // RAM chart context
+
+            const ramCtx = document
+                .getElementById("ramChart")
+                .getContext("2d");
+
+            // Create RAM chart
+
+            new Chart(ramCtx, {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+                            label: "Historical RAM",
+                            data: historicalRamExtended,
+                            borderColor: "blue",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        },
+
+                        {
+                            label: "Forecasted RAM",
+                            data: forecastRamExtended,
+                            borderColor: "red",
+                            borderDash: [10, 5],
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        },
+
+                        {
+                            label: "Actual Future RAM",
+                            data: actualFutureRamExtended,
+                            borderColor: "green",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        }
+
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    plugins: {
+                        legend: {
+                            position: "top"
+                        }
+                    }
+                }
+
+            });
+
+            // -----------------------------
+            // CPU VISUALIZATION
+            // -----------------------------
+
+            const historicalCpuExtended =
+                historicalCpu.concat(
+                    new Array(historicalCpu.length).fill(null)
+                );
+
+            const forecastCpuExtended =
+                new Array(historicalCpu.length - 1).fill(null)
+                    .concat([
+                        historicalCpu[
+                            historicalCpu.length - 1
+                        ]
+                    ])
+                    .concat(forecastCpu);
+
+            const actualFutureCpuExtended =
+                new Array(historicalCpu.length).fill(null)
+                    .concat(actualFutureCpu);
+
+            // CPU chart context
+
+            const cpuCtx = document
+                .getElementById("cpuChart")
+                .getContext("2d");
+
+            // Create CPU chart
+
+            new Chart(cpuCtx, {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+                            label: "Historical CPU",
+                            data: historicalCpuExtended,
+                            borderColor: "blue",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        },
+
+                        {
+                            label: "Forecasted CPU",
+                            data: forecastCpuExtended,
+                            borderColor: "red",
+                            borderDash: [10, 5],
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        },
+
+                        {
+                            label: "Actual Future CPU",
+                            data: actualFutureCpuExtended,
+                            borderColor: "green",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false
+                        }
+
+                    ]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    plugins: {
+                        legend: {
+                            position: "top"
+                        }
+                    }
+                }
+
+            });
+
+        }
+
+        // Load dashboard
+
+        loadData();
+
+    </script>
+
+</body>
+
+</html>
