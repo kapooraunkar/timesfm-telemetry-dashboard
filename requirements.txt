@@ -8,6 +8,7 @@ click==8.4.0
 clickhouse-connect==1.0.0
 colorama==0.4.6
 einshape==1.0
+Faker==40.18.0
 fastapi==0.136.1
 filelock==3.29.0
 fsspec==2026.4.0

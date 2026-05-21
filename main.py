@@ -22,8 +22,8 @@ app.add_middleware(
 client = clickhouse_connect.get_client(
     host="localhost",
     port=8123,
-    username="default",
-    password=""
+    username="admin",
+    password="admin123"
 )
 
 # Load TimesFM model ONCE
