@@ -30,13 +30,13 @@ for i in range(200):
     # gradual wave + slight noise
 
     ram = 70 + 10 * math.sin(i / 10) \
-+ random.uniform(-2, 2)
++ random.uniform(-2, 2)    #this adds a controlled randomness 
 
     # CPU pattern
     # faster oscillation + spikes
 
     cpu = 40 + 20 * math.sin(i / 5) \
-        + random.uniform(-5, 5)
+        + random.uniform(-5, 5)  #randomness
 
     rows.append([
         timestamp,
